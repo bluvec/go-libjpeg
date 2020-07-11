@@ -34,10 +34,6 @@ func TestMain(m *testing.M) {
 		fmt.Println("sourceManager leaked")
 		result = 2
 	}
-	if jpeg.DestinationManagerMapLen() > 0 {
-		fmt.Println("destinationManager leaked")
-		result = 2
-	}
 	os.Exit(result)
 }
 

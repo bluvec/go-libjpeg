@@ -143,6 +143,7 @@ import (
 	"errors"
 	"image"
 	"io"
+	"reflect"
 	"unsafe"
 
 	"github.com/pixiv/go-libjpeg/rgb"
@@ -156,14 +157,48 @@ type EncoderOptions struct {
 	DCTMethod       DCTMethod
 }
 
-func newCompress(w io.Writer) (cinfo *C.struct_jpeg_compress_struct, err error) {
+type cBuffer struct {
+	outbuffer **C.uchar
+	outsize   *C.size_t
+}
+
+func setupBuffer(cinfo *C.struct_jpeg_compress_struct) cBuffer {
+	// Allocate pointers in C to adhere to the cgo rule
+	// against storing Go pointers in C memory.
+	buf := cBuffer{
+		outbuffer: (**C.uchar)(C.malloc(C.ulong(unsafe.Sizeof((**C.uchar)(nil))))),
+		outsize:   (*C.size_t)(C.malloc(C.ulong(unsafe.Sizeof((*C.size_t)(nil))))),
+	}
+	*buf.outbuffer = nil
+	*buf.outsize = 0
+
+	C.jpeg_mem_dest(cinfo, buf.outbuffer, buf.outsize)
+
+	return buf
+}
+
+func (buf cBuffer) data() []byte {
+	return *(*[]byte)(unsafe.Pointer(&reflect.SliceHeader{
+		Data: uintptr(unsafe.Pointer(*buf.outbuffer)),
+		Cap:  int(*buf.outsize),
+		Len:  int(*buf.outsize),
+	}))
+}
+
+func (buf cBuffer) free() {
+	if *buf.outbuffer != nil {
+		C.free(unsafe.Pointer(*buf.outbuffer))
+	}
+	C.free(unsafe.Pointer(buf.outbuffer))
+	C.free(unsafe.Pointer(buf.outsize))
+}
+
+func newCompress() (cinfo *C.struct_jpeg_compress_struct, err error) {
 	cinfo = C.new_compress()
 	if cinfo == nil {
 		err = errors.New("failed to allocate jpeg encoder")
 		return
 	}
-
-	_, err = makeDestinationManager(w, cinfo)
 	return
 }
 
@@ -178,10 +213,6 @@ func startCompress(cinfo *C.struct_jpeg_compress_struct) error {
 func destroyCompress(cinfo *C.struct_jpeg_compress_struct) {
 	if cinfo == nil {
 		return
-	}
-	destinationManager := getDestinationManager(cinfo)
-	if destinationManager != nil {
-		releaseDestinationManager(destinationManager)
 	}
 	C.destroy_compress(cinfo)
 }
@@ -224,11 +255,14 @@ func writeMCUYCbCr(cinfo *C.struct_jpeg_compress_struct, y, cb, cr C.JSAMPROW, y
 // Encode encodes src image and writes into w as JPEG format data.
 func Encode(w io.Writer, src image.Image, opt *EncoderOptions) (err error) {
 	var cinfo *C.struct_jpeg_compress_struct
-	cinfo, err = newCompress(w)
+	cinfo, err = newCompress()
 	if err != nil {
 		return
 	}
 	defer destroyCompress(cinfo)
+
+	buf := setupBuffer(cinfo)
+	defer buf.free()
 
 	switch s := src.(type) {
 	case *image.YCbCr:
@@ -242,8 +276,12 @@ func Encode(w io.Writer, src image.Image, opt *EncoderOptions) (err error) {
 	default:
 		return errors.New("unsupported image type")
 	}
+	if err != nil {
+		return err
+	}
 
-	return
+	_, err = w.Write(buf.data())
+	return err
 }
 
 // encode image.YCbCr
