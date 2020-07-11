@@ -36,16 +36,24 @@ static void destroy_compress(struct jpeg_compress_struct *cinfo) {
 	free(cinfo);
 }
 
-static JDIMENSION write_scanlines(j_compress_ptr cinfo, JSAMPROW row, JDIMENSION max_lines, int *msg_code) {
+static JDIMENSION write_scanlines(j_compress_ptr cinfo, JSAMPROW pix, int stride, JDIMENSION max_lines, int *msg_code) {
 	// handle error
 	struct my_error_mgr *err = (struct my_error_mgr *)cinfo->err;
 	if (setjmp(err->jmpbuf) != 0) {
 		*msg_code = err->pub.msg_code;
 		return 0;
 	}
-
 	*msg_code = 0;
-	return jpeg_write_scanlines(cinfo, &row, max_lines);
+
+	JSAMPROW *rows = alloca(sizeof(JSAMPROW *) * max_lines);
+
+	int row = 0;
+	for (int i = 0; i < stride*max_lines; i += stride) {
+		rows[row] = &pix[i];
+		row++;
+	}
+
+	return jpeg_write_scanlines(cinfo, rows, max_lines);
 }
 
 static JDIMENSION write_mcu_gray(struct jpeg_compress_struct *cinfo, JSAMPROW pix, int stride, int *msg_code) {
@@ -225,9 +233,9 @@ func finishCompress(cinfo *C.struct_jpeg_compress_struct) error {
 	return nil
 }
 
-func writeScanline(cinfo *C.struct_jpeg_compress_struct, row C.JSAMPROW, maxLines C.JDIMENSION) (line int, err error) {
+func writeScanlines(cinfo *C.struct_jpeg_compress_struct, rows C.JSAMPROW, stride int, maxLines C.JDIMENSION) (line int, err error) {
 	code := C.int(0)
-	line = int(C.write_scanlines(cinfo, row, maxLines, &code))
+	line = int(C.write_scanlines(cinfo, rows, C.int(stride), maxLines, &code))
 	if code != 0 {
 		err = errors.New(jpegErrorMessage(unsafe.Pointer(cinfo)))
 	}
@@ -383,7 +391,7 @@ func encodeRGBA(cinfo *C.struct_jpeg_compress_struct, src *image.RGBA, p *Encode
 	}()
 
 	for v := 0; v < h; {
-		line, err := writeScanline(cinfo, C.JSAMPROW(unsafe.Pointer(&src.Pix[v*src.Stride])), C.JDIMENSION(1))
+		line, err := writeScanlines(cinfo, C.JSAMPROW(unsafe.Pointer(&src.Pix[v*src.Stride])), src.Stride, C.JDIMENSION(h-v))
 		if err != nil {
 			return err
 		}
@@ -416,7 +424,7 @@ func encodeRGB(cinfo *C.struct_jpeg_compress_struct, src *rgb.Image, p *EncoderO
 	}()
 
 	for v := 0; v < h; {
-		line, err := writeScanline(cinfo, C.JSAMPROW(unsafe.Pointer(&src.Pix[v*src.Stride])), C.JDIMENSION(1))
+		line, err := writeScanlines(cinfo, C.JSAMPROW(unsafe.Pointer(&src.Pix[v*src.Stride])), src.Stride, C.JDIMENSION(h-v))
 		if err != nil {
 			return err
 		}
