@@ -44,7 +44,7 @@ func GetOutFilePath(name string) string {
 }
 
 // OpenFile opens specified example file
-func OpenFile(name string) (io io.Reader) {
+func OpenFile(name string) (io io.ReadCloser) {
 	io, err := os.Open(GetExFilePath(name))
 	if err != nil {
 		panic(err)

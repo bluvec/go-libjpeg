@@ -7,6 +7,7 @@ import (
 	"image"
 	"image/color"
 	nativeJPEG "image/jpeg"
+	"image/png"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -61,6 +62,32 @@ func BenchmarkDecode(b *testing.B) {
 			}
 		}
 	}
+}
+
+func BenchmarkEncode(b *testing.B) {
+	io := util.OpenFile("tile.png")
+	img, err := png.Decode(io)
+	io.Close()
+	if err != nil {
+		b.Fatal(err)
+	}
+	nrgba := img.(*image.NRGBA)
+	rgba := image.NewRGBA(nrgba.Rect)
+	for y := 0; y < nrgba.Rect.Dy(); y++ {
+		for x := 0; x < nrgba.Rect.Dx(); x++ {
+			rgba.Set(x, y, color.RGBAModel.Convert(nrgba.At(x, y)))
+		}
+	}
+	img = rgba
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			jpeg.Encode(ioutil.Discard, img, &jpeg.EncoderOptions{})
+		}
+	})
 }
 
 func BenchmarkDecodeIntoRGB(b *testing.B) {
