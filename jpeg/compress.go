@@ -36,14 +36,22 @@ static void destroy_compress(struct jpeg_compress_struct *cinfo) {
 	free(cinfo);
 }
 
-static JDIMENSION write_scanlines(j_compress_ptr cinfo, JSAMPROW pix, int stride, JDIMENSION max_lines, int *msg_code) {
+typedef struct {
+	JDIMENSION lines;
+	int        code;
+} write_result;
+
+static write_result write_scanlines(j_compress_ptr cinfo, JSAMPROW pix, int stride, JDIMENSION max_lines) {
+	write_result result;
+
 	// handle error
 	struct my_error_mgr *err = (struct my_error_mgr *)cinfo->err;
 	if (setjmp(err->jmpbuf) != 0) {
-		*msg_code = err->pub.msg_code;
-		return 0;
+		result.code = err->pub.msg_code;
+		result.lines = 0;
+		return result;
 	}
-	*msg_code = 0;
+	result.code = 0;
 
 	JSAMPROW *rows = alloca(sizeof(JSAMPROW *) * max_lines);
 
@@ -53,15 +61,19 @@ static JDIMENSION write_scanlines(j_compress_ptr cinfo, JSAMPROW pix, int stride
 		row++;
 	}
 
-	return jpeg_write_scanlines(cinfo, rows, max_lines);
+	result.lines = jpeg_write_scanlines(cinfo, rows, max_lines);
+	return result;
 }
 
-static JDIMENSION write_mcu_gray(struct jpeg_compress_struct *cinfo, JSAMPROW pix, int stride, int *msg_code) {
+static write_result write_mcu_gray(struct jpeg_compress_struct *cinfo, JSAMPROW pix, int stride) {
+	write_result result;
+
 	// handle error
 	struct my_error_mgr *err = (struct my_error_mgr *)cinfo->err;
 	if (setjmp(err->jmpbuf) != 0) {
-		*msg_code = err->pub.msg_code;
-		return 0;
+		result.code = err->pub.msg_code;
+		result.lines = 0;
+		return result;
 	}
 
 	// Set height to one MCU size
@@ -80,16 +92,20 @@ static JDIMENSION write_mcu_gray(struct jpeg_compress_struct *cinfo, JSAMPROW pi
 	}
 
 	// Get the data
-	*msg_code = 0;
-	return jpeg_write_raw_data(cinfo, &rows, height);
+	result.code = 0;
+	result.lines = jpeg_write_raw_data(cinfo, &rows, height);
+	return result;
 }
 
-static JDIMENSION write_mcu_ycbcr(struct jpeg_compress_struct *cinfo, JSAMPROW y_row, JSAMPROW cb_row, JSAMPROW cr_row, int y_stride, int c_stride, int *msg_code) {
+static write_result write_mcu_ycbcr(struct jpeg_compress_struct *cinfo, JSAMPROW y_row, JSAMPROW cb_row, JSAMPROW cr_row, int y_stride, int c_stride) {
+	write_result result;
+
 	// handle error
 	struct my_error_mgr *err = (struct my_error_mgr *)cinfo->err;
 	if (setjmp(err->jmpbuf) != 0) {
-		*msg_code = err->pub.msg_code;
-		return 0;
+		result.code = err->pub.msg_code;
+		result.lines = 0;
+		return result;
 	}
 
 	// Allocate JSAMPIMAGE to hold pointers to one iMCU worth of image data
@@ -114,8 +130,9 @@ static JDIMENSION write_mcu_ycbcr(struct jpeg_compress_struct *cinfo, JSAMPROW y
 	}
 
 	// Get the data
-	*msg_code = 0;
-	return jpeg_write_raw_data(cinfo, image, y_h);
+	result.code = 0;
+	result.lines = jpeg_write_raw_data(cinfo, image, y_h);
+	return result;
 }
 
 static int start_compress(j_compress_ptr cinfo, boolean write_all_tables)
@@ -234,30 +251,27 @@ func finishCompress(cinfo *C.struct_jpeg_compress_struct) error {
 }
 
 func writeScanlines(cinfo *C.struct_jpeg_compress_struct, rows C.JSAMPROW, stride int, maxLines C.JDIMENSION) (line int, err error) {
-	code := C.int(0)
-	line = int(C.write_scanlines(cinfo, rows, C.int(stride), maxLines, &code))
-	if code != 0 {
-		err = errors.New(jpegErrorMessage(unsafe.Pointer(cinfo)))
+	res := C.write_scanlines(cinfo, rows, C.int(stride), maxLines)
+	if res.code != 0 {
+		return int(res.lines), errors.New(jpegErrorMessage(unsafe.Pointer(cinfo)))
 	}
-	return
+	return int(res.lines), nil
 }
 
 func writeMCUGray(cinfo *C.struct_jpeg_compress_struct, row C.JSAMPROW, stride int) (line int, err error) {
-	code := C.int(0)
-	line = int(C.write_mcu_gray(cinfo, row, C.int(stride), &code))
-	if code != 0 {
+	res := C.write_mcu_gray(cinfo, row, C.int(stride))
+	if res.code != 0 {
 		err = errors.New(jpegErrorMessage(unsafe.Pointer(cinfo)))
 	}
-	return
+	return int(res.lines), err
 }
 
 func writeMCUYCbCr(cinfo *C.struct_jpeg_compress_struct, y, cb, cr C.JSAMPROW, yStride, cStride int) (line int, err error) {
-	code := C.int(0)
-	line = int(C.write_mcu_ycbcr(cinfo, y, cb, cr, C.int(yStride), C.int(cStride), &code))
-	if code != 0 {
+	res := C.write_mcu_ycbcr(cinfo, y, cb, cr, C.int(yStride), C.int(cStride))
+	if res.code != 0 {
 		err = errors.New(jpegErrorMessage(unsafe.Pointer(cinfo)))
 	}
-	return
+	return int(res.lines), err
 }
 
 // Encode encodes src image and writes into w as JPEG format data.
