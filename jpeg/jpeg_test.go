@@ -423,25 +423,47 @@ func TestEncodeRGBA(t *testing.T) {
 	rgba := newRGBA()
 	w := bytes.NewBuffer(nil)
 
-	err := jpeg.Encode(w, rgba, &jpeg.EncoderOptions{
-		Quality: 100,
+	t.Run("Encode", func(t *testing.T) {
+		err := jpeg.Encode(w, rgba, &jpeg.EncoderOptions{
+			Quality: 100,
+		})
+		if err != nil {
+			t.Fatalf("failed to encode: %v", err)
+		}
+
+		decoded, err := jpeg.Decode(w, &jpeg.DecoderOptions{})
+		if err != nil {
+			t.Fatalf("failed to decode: %v", err)
+		}
+
+		diff, err := util.MatchImage(rgba, decoded, 1)
+		if err != nil {
+			t.Errorf("match image: %v", err)
+			util.WritePNG(rgba, "TestEncodeRGBA.want.png")
+			util.WritePNG(decoded, "TestEncodeRGBA.got.png")
+			util.WritePNG(diff, "TestEncodeRGBA.diff.png")
+		}
 	})
-	if err != nil {
-		t.Fatalf("failed to encode: %v", err)
-	}
 
-	decoded, err := jpeg.Decode(w, &jpeg.DecoderOptions{})
-	if err != nil {
-		t.Fatalf("failed to decode: %v", err)
-	}
+	t.Run("EncodeToBytes", func(t *testing.T) {
+		got, err := jpeg.EncodeToBytes(rgba, &jpeg.EncoderOptions{Quality: 100})
+		if err != nil {
+			t.Fatalf("failed to decode: %v", err)
+		}
 
-	diff, err := util.MatchImage(rgba, decoded, 1)
-	if err != nil {
-		t.Errorf("match image: %v", err)
-		util.WritePNG(rgba, "TestEncodeRGBA.want.png")
-		util.WritePNG(decoded, "TestEncodeRGBA.got.png")
-		util.WritePNG(diff, "TestEncodeRGBA.diff.png")
-	}
+		decoded, err := jpeg.Decode(bytes.NewReader(got), &jpeg.DecoderOptions{})
+		if err != nil {
+			t.Fatalf("failed to decode: %v", err)
+		}
+
+		diff, err := util.MatchImage(rgba, decoded, 1)
+		if err != nil {
+			t.Errorf("match image: %v", err)
+			util.WritePNG(rgba, "TestEncodeToBytesRGBA.want.png")
+			util.WritePNG(decoded, "TestEncodeToBytesRGBA.got.png")
+			util.WritePNG(diff, "TestEncodeToBytesRGBA.diff.png")
+		}
+	})
 }
 
 // See: https://github.com/pixiv/go-libjpeg/issues/36
