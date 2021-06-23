@@ -1,10 +1,8 @@
-package jpeg_test
+package jpeg
 
 import (
 	"bytes"
 	"testing"
-
-	"github.com/bluvec/go-libjpeg/jpeg"
 )
 
 // https://github.com/bluvec/go-libjpeg/issues/55
@@ -16,14 +14,14 @@ func TestDecodeAndEncodeRGBJPEG(t *testing.T) {
 		"\x03R\"\x00G\x11\x00B\x11\x00\xff\xda\x00\f\x03R\x00G\x00B" +
 		"\x00")
 
-	img, err := jpeg.Decode(bytes.NewReader(data), &jpeg.DecoderOptions{})
+	img, err := Decode(bytes.NewReader(data), &DecoderOptions{})
 	if err != nil {
 		t.Log(err)
 		return
 	}
 
 	var w bytes.Buffer
-	err = jpeg.Encode(&w, img, &jpeg.EncoderOptions{})
+	err = Encode(&w, img, &EncoderOptions{})
 	if err != nil {
 		t.Errorf("encoding after decoding failed: %v", err)
 	}

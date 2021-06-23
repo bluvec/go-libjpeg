@@ -8,7 +8,7 @@ import (
 
 func TestImageInterface(t *testing.T) {
 	rect := image.Rect(0, 0, 100, 100)
-	img := NewImage(rect)
+	img := NewRGBImage(rect)
 
 	if got := img.ColorModel(); got != ColorModel {
 		t.Errorf("ColorModel() should return ColorModel, got: %v", got)
