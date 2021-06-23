@@ -1,19 +1,17 @@
-package rgb_test
+package jpeg
 
 import (
 	"image"
 	"image/color"
 	"testing"
-
-	"github.com/bluvec/go-libjpeg/rgb"
 )
 
 func TestImageInterface(t *testing.T) {
 	rect := image.Rect(0, 0, 100, 100)
-	img := rgb.NewImage(rect)
+	img := NewImage(rect)
 
-	if got := img.ColorModel(); got != rgb.ColorModel {
-		t.Errorf("ColorModel() should return rgb.ColorModel, got: %v", got)
+	if got := img.ColorModel(); got != ColorModel {
+		t.Errorf("ColorModel() should return ColorModel, got: %v", got)
 	}
 
 	if got := img.Bounds(); got != rect {
@@ -33,21 +31,21 @@ func TestImageInterface(t *testing.T) {
 
 func TestConvertFromRGBA(t *testing.T) {
 	rgba := color.RGBA{0x11, 0x22, 0x33, 0xFF}
-	expect := rgb.RGB{0x11, 0x22, 0x33}
-	if got := rgb.ColorModel.Convert(rgba); got != expect {
+	expect := RGB{0x11, 0x22, 0x33}
+	if got := ColorModel.Convert(rgba); got != expect {
 		t.Errorf("got: %v, expect: %v", got, expect)
 	}
 }
 
 func TestConvertFromRGB(t *testing.T) {
-	c := rgb.RGB{0x11, 0x22, 0x33}
-	if got := rgb.ColorModel.Convert(c); got != c {
+	c := RGB{0x11, 0x22, 0x33}
+	if got := ColorModel.Convert(c); got != c {
 		t.Errorf("got: %v, expect: %v", got, c)
 	}
 }
 
 func TestColorRGBA(t *testing.T) {
-	c := rgb.RGB{0x11, 0x22, 0x33}
+	c := RGB{0x11, 0x22, 0x33}
 	r, g, b, a := uint32(0x1111), uint32(0x2222), uint32(0x3333), uint32(0xFFFF)
 
 	gotR, gotG, gotB, gotA := c.RGBA()

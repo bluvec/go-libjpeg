@@ -1,14 +1,14 @@
 // Package rgb provides RGB image which implements image.Image interface.
-package rgb
+package jpeg
 
 import (
 	"image"
 	"image/color"
 )
 
-// Image represent image data which has RGB colors.
-// Image is compatible with image.RGBA, but does not have alpha channel to reduce using memory.
-type Image struct {
+// RGBImage represent image data which has RGB colors.
+// RGBImage is compatible with image.RGBA, but does not have alpha channel to reduce using memory.
+type RGBImage struct {
 	// Pix holds the image's stream, in R, G, B order.
 	Pix []uint8
 	// Stride is the Pix stride (in bytes) between vertically adjacent pixels.
@@ -17,29 +17,29 @@ type Image struct {
 	Rect image.Rectangle
 }
 
-// NewImage allocates and returns RGB image
-func NewImage(r image.Rectangle) *Image {
+// NewRGBImage allocates and returns RGB image
+func NewRGBImage(r image.Rectangle) *RGBImage {
 	w, h := r.Dx(), r.Dy()
-	return &Image{Pix: make([]uint8, 3*w*h), Stride: 3 * w, Rect: r}
+	return &RGBImage{Pix: make([]uint8, 3*w*h), Stride: 3 * w, Rect: r}
 }
 
 // ColorModel returns RGB color model.
-func (p *Image) ColorModel() color.Model {
+func (p *RGBImage) ColorModel() color.Model {
 	return ColorModel
 }
 
 // Bounds implements image.Image.At
-func (p *Image) Bounds() image.Rectangle {
+func (p *RGBImage) Bounds() image.Rectangle {
 	return p.Rect
 }
 
 // At implements image.Image.At
-func (p *Image) At(x, y int) color.Color {
+func (p *RGBImage) At(x, y int) color.Color {
 	return p.RGBAAt(x, y)
 }
 
 // RGBAAt returns the color of the pixel at (x, y) as RGBA.
-func (p *Image) RGBAAt(x, y int) color.RGBA {
+func (p *RGBImage) RGBAAt(x, y int) color.RGBA {
 	if !(image.Point{x, y}.In(p.Rect)) {
 		return color.RGBA{}
 	}
@@ -77,4 +77,4 @@ func (c RGB) RGBA() (r, g, b, a uint32) {
 
 // Make sure Image implements image.Image.
 // See https://golang.org/doc/effective_go.html#blank_implements.
-var _ image.Image = new(Image)
+var _ image.Image = new(RGBImage)

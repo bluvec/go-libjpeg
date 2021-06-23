@@ -171,8 +171,6 @@ import (
 	"io"
 	"reflect"
 	"unsafe"
-
-	"github.com/bluvec/go-libjpeg/rgb"
 )
 
 // EncoderOptions specifies which settings to use during Compression.
@@ -316,7 +314,7 @@ func encode(src image.Image, opt *EncoderOptions) (cBuffer, error) {
 		err = encodeRGBA(cinfo, s, opt)
 	case *image.NRGBA:
 		err = encodeNRGBA(cinfo, s, opt)
-	case *rgb.Image:
+	case *RGBImage:
 		err = encodeRGB(cinfo, s, opt)
 	default:
 		err = fmt.Errorf("unsupported image type %T", s)
@@ -473,7 +471,7 @@ func encodeRGBA(cinfo *C.struct_jpeg_compress_struct, src *image.RGBA, p *Encode
 }
 
 // encode rgb.Image.
-func encodeRGB(cinfo *C.struct_jpeg_compress_struct, src *rgb.Image, p *EncoderOptions) (err error) {
+func encodeRGB(cinfo *C.struct_jpeg_compress_struct, src *RBGImage, p *EncoderOptions) (err error) {
 	// Set up compression parameters
 	w, h := src.Bounds().Dx(), src.Bounds().Dy()
 	cinfo.image_width = C.JDIMENSION(w)

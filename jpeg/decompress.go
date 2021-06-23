@@ -159,8 +159,6 @@ import (
 	"image/color"
 	"io"
 	"unsafe"
-
-	"github.com/bluvec/go-libjpeg/rgb"
 )
 
 func newDecompress(r io.Reader) *C.struct_jpeg_decompress_struct {
@@ -402,9 +400,9 @@ func readRGBScanlines(dinfo *C.struct_jpeg_decompress_struct, pix []uint8, strid
 }
 
 // TODO: supports decoding into image.RGBA instead of rgb.Image.
-func decodeRGB(dinfo *C.struct_jpeg_decompress_struct) (dest *rgb.Image, err error) {
+func decodeRGB(dinfo *C.struct_jpeg_decompress_struct) (dest *RGBImage, err error) {
 	C.jpeg_calc_output_dimensions(dinfo)
-	dest = rgb.NewImage(image.Rect(0, 0, int(dinfo.output_width), int(dinfo.output_height)))
+	dest = NewRGBImage(image.Rect(0, 0, int(dinfo.output_width), int(dinfo.output_height)))
 
 	dinfo.out_color_space = C.JCS_RGB
 	err = readRGBScanlines(dinfo, dest.Pix, dest.Stride)
@@ -412,7 +410,7 @@ func decodeRGB(dinfo *C.struct_jpeg_decompress_struct) (dest *rgb.Image, err err
 }
 
 // DecodeIntoRGB reads a JPEG data stream from r and returns decoded image as an rgb.Image with RGB colors.
-func DecodeIntoRGB(r io.Reader, options *DecoderOptions) (dest *rgb.Image, err error) {
+func DecodeIntoRGB(r io.Reader, options *DecoderOptions) (dest *RGBImage, err error) {
 	dinfo := newDecompress(r)
 	if dinfo == nil {
 		return nil, errors.New("allocation failed")

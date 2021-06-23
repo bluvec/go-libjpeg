@@ -1,7 +1,5 @@
 github.com/bluvec/go-libjpeg v0.0.0-20200712182422-ad87bc97fd64 h1:BOweMxMMSsbpY1T67A6KIFrWeHIXx0Vf2ijKapssSEU=
 github.com/bluvec/go-libjpeg v0.0.0-20200712182422-ad87bc97fd64/go.mod h1:NUSG9lunY+m31J/koDUSeOxahjkFzcbGBlpYVaUue0A=
-github.com/bluvec/go-libjpeg/rgb v0.0.0-20210623002017-7635bc850c5e h1:/1D+PudpcuECNx0raEDeqRAMHC8NNuU+yMDD9arFeNs=
-github.com/bluvec/go-libjpeg/rgb v0.0.0-20210623002017-7635bc850c5e/go.mod h1:CQx+17SSX6pTfWUHW1YBHFjcn3eR0iq7HGKWWI2sURQ=
 github.com/disintegration/imaging v1.6.2 h1:w1LecBlG2Lnp8B3jk5zSuNqd7b4DXhcjwek1ei82L+c=
 github.com/disintegration/imaging v1.6.2/go.mod h1:44/5580QXChDfwIclfc/PCwrr44amcmDAg8hxG0Ewe4=
 github.com/pixiv/go-libjpeg v0.0.0-20190822045933-3da21a74767d h1:ls+7AYarUlUSetfnN/DKVNcK6W8mQWc6VblmOm4XwX0=
