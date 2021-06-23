@@ -9,7 +9,7 @@ package jpeg
 //
 
 /*
-#cgo LDFLAGS: -ljpeg
+#cgo LDFLAGS: libjpeg-t.a -lm
 #include <stdlib.h>
 #include <stdio.h>
 #include <jpeglib.h>
