@@ -2,9 +2,9 @@ package jpeg
 
 //
 // Original codes are bollowed from go-thumber.
-// Copyright (c) 2014 pixiv Inc. All rights reserved.
+// Copyright (c) 2014 bluvec Inc. All rights reserved.
 //
-// See: https://github.com/pixiv/go-thumber
+// See: https://github.com/bluvec/go-thumber
 //
 
 /*

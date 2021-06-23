@@ -24,7 +24,7 @@ var SubsampledImages = []string{
 // GetExFilePath returns the path of specified example file.
 func GetExFilePath(name string) string {
 	for _, gopath := range strings.Split(os.Getenv("GOPATH"), ":") {
-		path := filepath.Join(gopath, "src/github.com/pixiv/go-libjpeg/test/images", name)
+		path := filepath.Join(gopath, "src/github.com/bluvec/go-libjpeg/test/images", name)
 		if _, err := os.Stat(path); err == nil {
 			return path
 		}
@@ -35,7 +35,7 @@ func GetExFilePath(name string) string {
 // GetOutFilePath returns the path of specified out file.
 func GetOutFilePath(name string) string {
 	for _, gopath := range strings.Split(os.Getenv("GOPATH"), ":") {
-		path := filepath.Join(gopath, "src/github.com/pixiv/go-libjpeg/test/out")
+		path := filepath.Join(gopath, "src/github.com/bluvec/go-libjpeg/test/out")
 		if _, err := os.Stat(path); err == nil {
 			return filepath.Join(path, name)
 		}
